@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Wave | Boutique</title>
+    <style>
+        /* --- TUS ESTILOS ORIGINALES (SIN CAMBIOS) --- */
+        :root {
+            --bg-color: #fff5f7; 
+            --text-color: #4a3f4e; 
+            --card-bg: #ffffff;
+            --accent-color: #e2b4bd; 
+            --star-color: rgba(255, 192, 203, 0.5);
+        }
+ 
+        body.dark-mode {
+            --bg-color: #0d0b16;
+            --text-color: #eee4f0;
+            --card-bg: #1a1628;
+            --accent-color: #cbb7e5;
+            --star-color: rgba(255, 255, 255, 0.8);
+        }
+ 
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            transition: background-color 1s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-x: hidden;
+        }
+ 
+        #intro-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #0d0b16; display: flex; justify-content: center; align-items: center;
+            z-index: 9999; transition: opacity 1.2s ease;
+        }
+ 
+        .intro-text {
+            color: #ffffff; font-size: clamp(1.5rem, 6vw, 3rem);
+            letter-spacing: 20px; text-transform: uppercase; font-weight: 200;
+            animation: fadeInOut 3s ease-in-out forwards;
+        }
+ 
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: scale(0.98); letter-spacing: 10px; }
+            50% { opacity: 1; transform: scale(1); letter-spacing: 20px; }
+            100% { opacity: 0; }
+        }
+ 
+        .stars-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+        .star { position: absolute; background-color: var(--star-color); border-radius: 50%; animation: twinkle 4s infinite ease-in-out; }
+        @keyframes twinkle { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+ 
+        .theme-toggle {
+            position: fixed; top: 30px; right: 30px;
+            background: var(--card-bg); border: none; cursor: pointer;
+            z-index: 1000; color: var(--text-color); width: 45px; height: 45px;
+            border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.5s ease; overflow: hidden;
+        }
+ 
+        .celestial-icon { position: relative; width: 24px; height: 24px; transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        body.dark-mode .celestial-icon { transform: rotate(360deg); }
+        .sun, .moon { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; transition: opacity 0.4s ease, transform 0.4s ease; }
+        .sun { opacity: 0; transform: scale(0.5); }
+        body.dark-mode .moon { opacity: 0; transform: scale(0.5); }
+        body.dark-mode .sun { opacity: 1; transform: scale(1); }
+        .sun-circle { width: 10px; height: 10px; border: 1.5px solid currentColor; border-radius: 50%; }
+        .sun-rays { position: absolute; width: 20px; height: 20px; border: 1px dashed currentColor; border-radius: 50%; animation: rotateRays 10s linear infinite; }
+        @keyframes rotateRays { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+ 
+        .cart-toggle {
+            position: fixed; bottom: 110px; right: 40px; width: 50px; height: 50px;
+            background: var(--card-bg); border: 1px solid var(--text-color); color: var(--text-color);
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            z-index: 1000; cursor: pointer; backdrop-filter: blur(8px); opacity: 0.6; transition: 0.5s;
+        }
+        .cart-toggle:hover { opacity: 1; }
+        .cart-count { position: absolute; top: -5px; right: -5px; background: var(--accent-color); color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; }
+ 
+        .side-panel {
+            position: fixed; top: 0; right: -100%; width: 100%; max-width: 400px; height: 100%;
+            background: var(--card-bg); z-index: 2000; box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+            transition: right 0.6s cubic-bezier(0.23, 1, 0.32, 1); padding: 40px; box-sizing: border-box;
+            display: flex; flex-direction: column;
+        }
+        .side-panel.active { right: 0; }
+        .close-btn { align-self: flex-end; cursor: pointer; font-size: 24px; margin-bottom: 20px; }
+ 
+        .product-preview-box {
+            width: 100%; aspect-ratio: 1/1; border-radius: 15px; 
+            background: var(--bg-color); border: 1px solid var(--accent-color);
+            margin-bottom: 20px; display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+        .panel-carousel-container {
+            width: 100%; aspect-ratio: 1/1; position: relative;
+            overflow: hidden; border-radius: 18px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.16));
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .panel-carousel-track {
+            display: flex; transition: transform 0.35s ease;
+            width: 100%; height: 100%; will-change: transform;
+        }
+        .panel-carousel-slide {
+            min-width: 100%; min-height: 100%; background-size: cover;
+            background-position: center; border-radius: 18px;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+        }
+        .panel-carousel-dots {
+            position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 8px; z-index: 2;
+        }
+        .panel-carousel-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: rgba(255,255,255,0.28); border: 1px solid rgba(255,255,255,0.45);
+            cursor: pointer; transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .panel-carousel-dot.active {
+            background: rgba(255,255,255,0.85); transform: scale(1.1);
+        }
+ 
+        .carousel-container {
+            max-width: 760px; margin: 0 auto 40px; position: relative;
+            overflow: hidden; border-radius: 25px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.14);
+        }
+        .carousel-track {
+            display: flex; transition: transform 0.4s ease;
+            touch-action: pan-y;
+        }
+        .carousel-slide {
+            min-width: 100%; user-select: none; pointer-events: none;
+            display: flex; align-items: center; justify-content: center;
+            position: relative; height: 320px;
+        }
+        .carousel-slide::before {
+            content: "";
+            position: absolute; inset: 0;
+            background-size: cover; background-position: center;
+            filter: brightness(0.82);
+        }
+        .carousel-slide span {
+            position: relative; z-index: 1; color: white;
+            font-size: clamp(1.5rem, 3vw, 2.5rem); letter-spacing: 0.35rem;
+            text-transform: uppercase; text-align: center;
+            text-shadow: 0 20px 50px rgba(0,0,0,0.35);
+        }
+        .carousel-slide[data-image="0"]::before { background-image: url('images/Neon_comet_Home_page_catalogo_tanto_carrucel_como_portada_uno_de_los_bloques.png'); background-size: cover; background-position: center; }
+        .carousel-slide[data-image="1"]::before { background-image: url('images/Pink_StarLight_Home_page_catalogo_tanto_carrucel_como_portada_uno_de_los_bloques.png'); background-size: cover; background-position: center; }
+        .carousel-slide[data-image="2"]::before { background-image: url('images/Lilac_Flare_Home_page_catalogo_tanto_carrucel_como_portada_uno_de_los_bloques.png'); background-size: cover; background-position: center; }
+        .carousel-slide[data-image="3"]::before { background-image: url('images/Celestial_Wave_Home_page_catalogo_tanto_carrucel_como_portada_uno_de_los_bloques.png'); background-size: cover; background-position: center; }
+        .carousel-dots {
+            position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
+            display: flex; gap: 10px; z-index: 2;
+        }
+        .carousel-dot {
+            width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.3);
+            cursor: pointer; transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .carousel-dot.active {
+            background: rgba(255,255,255,0.8); transform: scale(1.1);
+        }
+        .carousel-hint {
+            position: absolute; left: 24px; bottom: 22px; color: rgba(255,255,255,0.8); font-size: 0.8rem; letter-spacing: 0.18rem; z-index: 2;
+        }
+ 
+        .order-btn { background: var(--text-color); color: var(--bg-color); border: none; padding: 15px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; margin-top: auto; }
+ 
+        /* --- AGREGADO: ESTILOS PARA QUITAR Y TOTAL --- */
+        .cart-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; border-bottom: 1px solid var(--accent-color);
+        }
+        .remove-btn { color: #ff4d4d; cursor: pointer; font-weight: bold; margin-left: 10px; }
+        .total-box { margin-top: 20px; font-size: 1.2rem; font-weight: 300; letter-spacing: 2px; text-align: right; border-top: 1px solid var(--text-color); padding-top: 10px; }
+ 
+        header { text-align: center; padding: 150px 20px 60px; }
+        header h1 { font-size: clamp(2.2rem, 10vw, 3.8rem); letter-spacing: 15px; font-weight: 300; margin: 0; text-transform: lowercase; }
+        header p { font-size: 10px; text-transform: uppercase; letter-spacing: 6px; margin-top: 15px; opacity: 0.5; }
+ 
+        .catalog-container { max-width: 980px; margin: 0 auto; padding: 35px 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 28px; }
+        .product-card { background: var(--card-bg); border-radius: 18px; padding: 10px; transition: transform 0.35s ease, border-color 0.35s ease; border: 1px solid rgba(255,255,255,0.08); cursor: pointer; box-shadow: 0 10px 24px rgba(0,0,0,0.06); }
+        .product-card:hover { transform: translateY(-6px); border-color: rgba(255,255,255,0.28); }
+        .img-wrapper { aspect-ratio: 1/1; border-radius: 14px; overflow: hidden; background: var(--bg-color); margin-bottom: 12px; display: flex; align-items: center; justify-content: center; }
+        .img-wrapper img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .img-placeholder-text { font-size: 0.65rem; letter-spacing: 1.6px; opacity: 0.28; text-transform: uppercase; }
+        .product-info { display: grid; gap: 6px; }
+        .product-name { font-size: 0.95rem; font-weight: 500; letter-spacing: 0.08em; }
+        .product-price { font-size: 0.9rem; opacity: 0.8; }
+ 
+        .whatsapp-btn {
+            position: fixed; bottom: 40px; right: 40px; width: 50px; height: 50px;
+            background-color: transparent; border: 1px solid var(--text-color); color: var(--text-color);
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            z-index: 1000; text-decoration: none; backdrop-filter: blur(8px); opacity: 0.6; transition: all 0.5s ease;
+        }
+ 
+        footer { text-align: center; padding: 100px 40px; opacity: 0.4; font-size: 0.6rem; letter-spacing: 3px; line-height: 2.2; text-transform: uppercase; }
+    </style>
+</head>
+<body class="dark-mode">
+ 
+    <div id="intro-screen"><div class="intro-text">Star Wave</div></div>
+    <div class="stars-container" id="stars-box"></div>
+ 
+    <button class="theme-toggle" onclick="toggleTheme()">
+        <div class="celestial-icon">
+            <div class="moon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div>
+            <div class="sun"><div class="sun-circle"></div><div class="sun-rays"></div></div>
+        </div>
+    </button>
+ 
+    <div class="cart-toggle" onclick="toggleCart()">
+        <span class="cart-count" id="cart-num">0</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+    </div>
+ 
+    <a href="https://wa.me/50240346691" class="whatsapp-btn" target="_blank">
+        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    </a>
+ 
+    <header><h1>star wave</h1><p>Shine like a star.</p></header>
+ 
+    <section class="carousel-container" id="carousel">
+        <div class="carousel-track" id="carouselTrack">
+            <div class="carousel-slide" data-image="0"><span>Celestial Wave</span></div>
+            <div class="carousel-slide" data-image="1"><span>Pink Starlight</span></div>
+            <div class="carousel-slide" data-image="2"><span>Lilac Flare</span></div>
+            <div class="carousel-slide" data-image="3"><span>Neon Comet</span></div>
+        </div>
+        <div class="carousel-hint">Desliza para ver la siguiente foto</div>
+        <div class="carousel-dots" id="carouselDots"></div>
+    </section>
+ 
+    <main class="catalog-container">
+        <!-- Bloque 1 -->
+        <div class="product-card" onclick="openP('Celestial Wave', 350, 'Tejido sedoso premium.')">
+            <div class="img-wrapper"><img src="images/Celestial_Wave_Home_page_catalogo_tanto_carrucel_como_portada_uno_de_los_bloques.png" alt="Celestial Wave"></div>
+            <div class="product-info"><div class="product-name">Celestial Wave</div><div class="product-price">Q 350.00</div></div>
+        </div>
+        <!-- Bloque 2 -->
+        <div class="product-card" onclick="openP('Pink Starlight', 425, 'Ajuste estelar moderno.')">
+            <div class="img-wrapper"><img src="images/Pink_StarLight_Home_page_catalogo_tanto_carrucel_como_portada_uno_de_los_bloques.png" alt="Pink Starlight"></div>
+            <div class="product-info"><div class="product-name">Pink Starlight</div><div class="product-price">Q 425.00</div></div>
+        </div>
+        <!-- Bloque 3 -->
+        <div class="product-card" onclick="openP('Neon Comet', 500, 'Diseño exclusivo de noche.')">
+            <div class="img-wrapper"><img src="images/Neon_comet_Home_page_catalogo_tanto_carrucel_como_portada_uno_de_los_bloques.png" alt="Neon Comet"></div>
+            <div class="product-info"><div class="product-name">Neon Comet</div><div class="product-price">Q 500.00</div></div>
+        </div>
+            <!-- Bloque 4 -->
+        <div class="product-card" onclick="openP('Lilac Flare', 600, 'Fluido con brillo cósmico.')">
+            <div class="img-wrapper"><img src="images/Lilac_Flare_Home_page_catalogo_tanto_carrucel_como_portada_uno_de_los_bloques.png" alt="Lilac Flare"></div>
+            <div class="product-info"><div class="product-name">Lilac Flare</div><div class="product-price">Q 600.00</div></div>
+        </div>
+    </main>
+ 
+    <div id="side-panel" class="side-panel">
+        <span class="close-btn" onclick="closeP()">×</span>
+        <div class="product-preview-box">
+            <div class="panel-carousel-container" id="panelCarousel">
+                <div class="panel-carousel-track" id="panelCarouselTrack"></div>
+                <div class="panel-carousel-dots" id="panelCarouselDots"></div>
+            </div>
+        </div>
+        <h2 id="p-title" style="font-weight: 300;"></h2>
+        <p id="p-price" style="color: var(--accent-color); font-size: 20px; margin-top:0;"></p>
+        <p id="p-desc" style="opacity: 0.7; font-size: 14px;"></p>
+        <div style="margin-top:20px;">
+            <label style="font-size:12px; letter-spacing: 1px;">CANTIDAD:</label><br>
+            <input type="number" id="p-qty" value="1" min="1" style="width: 50px; padding: 5px; background: transparent; color: inherit; border: 1px solid var(--accent-color); margin-top: 5px;">
+        </div>
+        <button class="order-btn" onclick="addC()">AÑADIR A LA BOLSA</button>
+    </div>
+ 
+    <div id="cart-panel" class="side-panel">
+        <span class="close-btn" onclick="toggleCart()">×</span>
+        <h2 style="font-weight: 300; letter-spacing: 2px;">TU BOLSA</h2>
+        <div id="cart-list" style="margin-top: 20px; flex-grow: 1; overflow-y: auto;"></div>
+ 
+        <!-- AGREGADO: CAJA DE TOTAL -->
+        <div class="total-box">
+            TOTAL: <span id="cart-total">Q 0.00</span>
+        </div>
+ 
+        <button class="order-btn" style="margin-top: 20px;">COMPRAR AHORA</button>
+    </div>
+ 
+    <footer>STAR WAVE® <br> Adara Melgar • Carlos Cuevas • Ricardo • Andrea Oliva • Gustavo Ordoñez</footer>
+ 
+    <script>
+        window.addEventListener('load', () => { setTimeout(() => { const intro = document.getElementById('intro-screen'); intro.style.opacity = '0'; setTimeout(() => intro.style.display = 'none', 1200); }, 2500); });
+        const starsBox = document.getElementById('stars-box');
+        for (let i = 0; i < 120; i++) { const star = document.createElement('div'); star.className = 'star'; const size = (Math.random() * 1.5 + 1) + 'px'; star.style.width = size; star.style.height = size; star.style.top = Math.random() * 100 + '%'; star.style.left = Math.random() * 100 + '%'; star.style.animationDelay = Math.random() * 5 + 's'; starsBox.appendChild(star); }
+        function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+ 
+        let items = [];
+        let currentPrice = 0;
+        const productImages = {
+            'Celestial Wave': [
+                'images/Celestial_Wave_carrusel_dentro_del_bloque_asignado_para_esta_prenda.png',
+                'images/Celestial_Wave_carrusel_dentro_del_bloque_asignado_para_esta_prenda (2).png',
+                'images/Celestial_Wave_carrusel_dentro_del_bloque_asignado_para_esta_prenda (3).png',
+                'images/Celestial_Wave_carrusel_dentro_del_bloque_asignado_para_esta_prenda (4).png'
+            ],
+            'Pink Starlight': [
+                'images/Pink_StarLight_carrusel_dentro_del_bloque_asignado_para_esta_prenda (4).png',
+                'images/Pink_StarLight_carrusel_dentro_del_bloque_asignado_para_esta_prenda (5).png',
+                'images/Pink_StarLight_carrusel_dentro_del_bloque_asignado_para_esta_prenda (6).png',
+                'images/Pink_StarLight_carrusel_dentro_del_bloque_asignado_para_esta_prenda (7).png',
+                'images/Pink_StarLight_carrusel_dentro_del_bloque_asignado_para_esta_prenda (8).png',
+                'images/Pink_StarLight_carrusel_dentro_del_bloque_asignado_para_esta_prenda (9).png'
+            ],
+            'Neon Comet': [
+                'images/Neon_Comet_carrusel_dentro_del_bloque_asignado_para_esta_prenda.png',
+                'images/Neon_Comet_carrusel_dentro_del_bloque_asignado_para_esta_prenda (2).png',
+                'images/Neon_Comet_carrusel_dentro_del_bloque_asignado_para_esta_prenda (3).png',
+                'images/Neon_Comet_carrusel_dentro_del_bloque_asignado_para_esta_prenda (4).png',
+                'images/Neon_Comet_carrusel_dentro_del_bloque_asignado_para_esta_prenda (5).png',
+                'images/Neon_Comet_carrusel_dentro_del_bloque_asignado_para_esta_prenda (6).png',
+                'images/Neon_Comet_carrusel_dentro_del_bloque_asignado_para_esta_prenda (7).png'
+            ],
+            'Lilac Flare': [
+                'images/Lilac_Flare_carrusel_dentro_del_bloque_asignado_para_esta_prenda.png',
+                'images/Lilac_Flare_carrusel_dentro_del_bloque_asignado_para_esta_prenda (2).png',
+                'images/Lilac_Flare_carrusel_dentro_del_bloque_asignado_para_esta_prenda (3).png',
+                'images/Lilac_Flare_carrusel_dentro_del_bloque_asignado_para_esta_prenda (4).png'
+            ]
+        };
+        const panelTrack = document.getElementById('panelCarouselTrack');
+        const panelDots = document.getElementById('panelCarouselDots');
+        let panelCurrentSlide = 0;
+        let panelStartX = 0;
+        let panelDragging = false;
+ 
+        function openP(t, p, d) {
+            document.getElementById('p-title').innerText = t;
+            document.getElementById('p-price').innerText = "Q " + p.toFixed(2);
+            document.getElementById('p-desc').innerText = d;
+            currentPrice = p;
+            renderPanelCarousel(t);
+            document.getElementById('side-panel').classList.add('active');
+        }
+ 
+        function closeP() { document.getElementById('side-panel').classList.remove('active'); }
+        function toggleCart() { document.getElementById('cart-panel').classList.toggle('active'); }
+ 
+        function addC() {
+            const name = document.getElementById('p-title').innerText;
+            const qty = parseInt(document.getElementById('p-qty').value);
+            const price = currentPrice;
+ 
+            items.push({ name, qty, price, id: Date.now() });
+            renderCart();
+            closeP();
+        }
+ 
+        /* AGREGADO: FUNCIÓN PARA QUITAR PRODUCTOS */
+        function removeC(id) {
+            items = items.filter(item => item.id !== id);
+            renderCart();
+        }
+ 
+        /* AGREGADO: LÓGICA DE RENDERIZADO Y TOTAL */
+        function renderCart() {
+            const list = document.getElementById('cart-list');
+            const totalDisplay = document.getElementById('cart-total');
+            const countDisplay = document.getElementById('cart-num');
+ 
+            list.innerHTML = "";
+            let total = 0;
+ 
+            items.forEach(item => {
+                const subtotal = item.price * item.qty;
+                total += subtotal;
+ 
+                const entry = document.createElement('div');
+                entry.className = "cart-item";
+                entry.innerHTML = `
+                    <div style="font-size:12px;">
+                        <strong>${item.qty}x</strong> ${item.name}<br>
+                        <span style="opacity:0.6">Q ${subtotal.toFixed(2)}</span>
+                    </div>
+                    <span class="remove-btn" onclick="removeC(${item.id})">×</span>
+                `;
+                list.appendChild(entry);
+            });
+ 
+            totalDisplay.innerText = "Q " + total.toFixed(2);
+            countDisplay.innerText = items.length;
+        }
+ 
+        function renderPanelCarousel(product) {
+            const images = productImages[product] || [];
+            panelTrack.innerHTML = '';
+            panelDots.innerHTML = '';
+            panelCurrentSlide = 0;
+ 
+            if (!images.length) {
+                panelTrack.innerHTML = '<div class="panel-carousel-slide" style="background: rgba(0,0,0,0.08);"></div>';
+                return;
+            }
+ 
+            images.forEach(src => {
+                const slide = document.createElement('div');
+                slide.className = 'panel-carousel-slide';
+                slide.style.backgroundImage = `url('${src}')`;
+                panelTrack.appendChild(slide);
+            });
+ 
+            images.forEach((_, index) => {
+                const dot = document.createElement('button');
+                dot.className = 'panel-carousel-dot';
+                dot.type = 'button';
+                dot.addEventListener('click', () => {
+                    panelCurrentSlide = index;
+                    setPanelPosition();
+                    updatePanelDots();
+                });
+                panelDots.appendChild(dot);
+            });
+ 
+            updatePanelDots();
+            setPanelPosition();
+        }
+ 
+        function updatePanelDots() {
+            panelDots.querySelectorAll('.panel-carousel-dot').forEach((dot, index) => {
+                dot.classList.toggle('active', index === panelCurrentSlide);
+            });
+        }
+ 
+        function setPanelPosition() {
+            const width = panelTrack.offsetWidth;
+            panelTrack.style.transform = `translateX(-${panelCurrentSlide * width}px)`;
+        }
+ 
+        function panelGestureStart(event) {
+            panelDragging = true;
+            panelStartX = event.pageX;
+            panelTrack.style.transition = 'none';
+        }
+ 
+        function panelGestureMove(event) {
+            if (!panelDragging) return;
+            const x = event.pageX;
+            const delta = x - panelStartX;
+            const width = panelTrack.offsetWidth;
+            panelTrack.style.transform = `translateX(${ -panelCurrentSlide * width + delta }px)`;
+        }
+ 
+        function panelGestureEnd(event) {
+            if (!panelDragging) return;
+            panelDragging = false;
+            const x = event.pageX;
+            const delta = x - panelStartX;
+            const width = panelTrack.offsetWidth;
+            panelTrack.style.transition = 'transform 0.35s ease';
+            if (delta < -70 && panelCurrentSlide < panelTrack.children.length - 1) panelCurrentSlide += 1;
+            else if (delta > 70 && panelCurrentSlide > 0) panelCurrentSlide -= 1;
+            setPanelPosition();
+            updatePanelDots();
+        }
+ 
+        const panelContainer = document.getElementById('panelCarousel');
+        panelContainer.addEventListener('pointerdown', event => {
+            event.preventDefault();
+            panelGestureStart(event);
+        });
+        panelContainer.addEventListener('pointermove', panelGestureMove);
+        panelContainer.addEventListener('pointerup', panelGestureEnd);
+        panelContainer.addEventListener('pointercancel', panelGestureEnd);
+        panelContainer.addEventListener('pointerleave', panelGestureEnd);
+        window.addEventListener('resize', () => {
+            setPosition();
+            setPanelPosition();
+        });
+ 
+        const carouselTrack = document.getElementById('carouselTrack');
+        const carouselDots = document.getElementById('carouselDots');
+        const slides = Array.from(carouselTrack.children);
+        let currentSlide = 0;
+        let startX = 0;
+        let isDragging = false;
+ 
+        function createDots() {
+            slides.forEach((_, index) => {
+                const dot = document.createElement('button');
+                dot.className = 'carousel-dot';
+                dot.type = 'button';
+                dot.addEventListener('click', () => goToSlide(index));
+                carouselDots.appendChild(dot);
+            });
+        }
+ 
+        function updateDots() {
+            carouselDots.querySelectorAll('.carousel-dot').forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlide);
+            });
+        }
+ 
+        function setPosition() {
+            const width = carouselTrack.offsetWidth;
+            carouselTrack.style.transform = `translateX(-${currentSlide * width}px)`;
+        }
+ 
+        function goToSlide(index) {
+            currentSlide = Math.max(0, Math.min(index, slides.length - 1));
+            setPosition();
+            updateDots();
+        }
+ 
+        function gestureStart(event) {
+            isDragging = true;
+            startX = event.pageX;
+            carouselTrack.style.transition = 'none';
+        }
+ 
+        function gestureMove(event) {
+            if (!isDragging) return;
+            const x = event.pageX;
+            const delta = x - startX;
+            const width = carouselTrack.offsetWidth;
+            carouselTrack.style.transform = `translateX(${ -currentSlide * width + delta }px)`;
+        }
+ 
+        function gestureEnd(event) {
+            if (!isDragging) return;
+            isDragging = false;
+            const x = event.pageX;
+            const delta = x - startX;
+            const width = carouselTrack.offsetWidth;
+            carouselTrack.style.transition = 'transform 0.4s ease';
+            if (delta < -80 && currentSlide < slides.length - 1) currentSlide += 1;
+            else if (delta > 80 && currentSlide > 0) currentSlide -= 1;
+            setPosition();
+            updateDots();
+        }
+ 
+        function attachCarouselEvents() {
+            const container = document.getElementById('carousel');
+            container.addEventListener('pointerdown', event => {
+                event.preventDefault();
+                gestureStart(event);
+            });
+            container.addEventListener('pointermove', gestureMove);
+            container.addEventListener('pointerup', gestureEnd);
+            container.addEventListener('pointercancel', gestureEnd);
+            container.addEventListener('pointerleave', gestureEnd);
+            window.addEventListener('resize', setPosition);
+        }
+ 
+        createDots();
+        updateDots();
+        attachCarouselEvents();
+        setPosition();
+    </script>
+</body>
+</html>
